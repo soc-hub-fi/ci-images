@@ -22,8 +22,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tar \
     build-essential \
     pkg-config \
+    # Needed for Verilator FST tracing: zlib.h
     zlib1g-dev \
     libssl-dev \
+    # Needed by run-sim.sh to conver ELF to binary
     xxd \
     verilator=${VERILATOR_VERSION} \
     && rm -rf /var/lib/apt/lists/*
