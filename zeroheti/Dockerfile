@@ -1,10 +1,14 @@
-# Use a small, stable base
+# syntax=docker/dockerfile:1
+
 FROM debian:bookworm-slim
 
-# Avoid interactive prompts during install
+# Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
+ENV RUST_VERSION=1.94.0
+ENV USER=builder
+ENV UID=1000
 
-# Install system dependencies
+# ---- System deps ----
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
@@ -14,12 +18,25 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Rust (needed because Bender is distributed via Cargo)
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
-ENV PATH="/root/.cargo/bin:${PATH}"
+# ---- Non-root user ----
+RUN useradd -m -u ${UID} -s /bin/bash ${USER}
 
-# Install Bender
-RUN cargo install bender
+USER ${USER}
+WORKDIR /home/${USER}
 
-# Default shell
+# ---- Rust (pinned) ----
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION}
+
+ENV PATH="/home/${USER}/.cargo/bin:${PATH}"
+
+# ---- Cargo cache dirs ----
+# These make cache mounts cleaner & predictable
+ENV CARGO_HOME=/home/${USER}/.cargo
+ENV RUSTUP_HOME=/home/${USER}/.rustup
+
+# ---- Install Bender with cache mounts ----
+RUN --mount=type=cache,target=/home/${USER}/.cargo/registry \
+    --mount=type=cache,target=/home/${USER}/.cargo/git \
+    cargo install bender
+
 CMD ["/bin/bash"]
