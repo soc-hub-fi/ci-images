@@ -1,8 +1,18 @@
 # zeroHETI container
 
+## Basics
+
 ```sh
 # Build the container
-podman build -t zeroheti:0.1 .
+podman build -t ghcr.io/soc-hub-fi/zeroheti-ci:local .
+
+# Push the built image
+podman build -t ghcr.io/soc-hub-fi/zeroheti-ci:latest .
+podman push ghcr.io/soc-hub-fi/zeroheti-ci:latest
+
+# Pull a published image
+podman pull ghcr.io/soc-hub-fi/zeroheti-ci:latest
+```
 
 ## Replay upstream `zeroHETI` CI (with reusable caches)
 
