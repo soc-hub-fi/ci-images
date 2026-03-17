@@ -41,7 +41,15 @@ RUN if [ -x "${RISCV_PREFIX}/bin/riscv32-unknown-elf-gcc" ] && [ ! -e "${RISCV_P
 ENV PATH="${RISCV_PREFIX}/bin:${PATH}"
 
 # ---- Non-root user ----
-RUN useradd -m -u ${UID} -s /bin/bash ${USER}
+# Some base images already have UID 1000 allocated (e.g. "ubuntu").
+# If so, reuse that UID and rename/move it to our desired user/home.
+RUN if getent passwd "${UID}" >/dev/null; then \
+        existing_user="$(getent passwd "${UID}" | cut -d: -f1)"; \
+        usermod -l "${USER}" "${existing_user}"; \
+        usermod -d "/home/${USER}" -m "${USER}"; \
+    else \
+        useradd -m -u "${UID}" -s /bin/bash "${USER}"; \
+    fi
 
 USER ${USER}
 WORKDIR /home/${USER}
@@ -57,8 +65,8 @@ ENV CARGO_HOME=/home/${USER}/.cargo
 ENV RUSTUP_HOME=/home/${USER}/.rustup
 
 # ---- Install Bender with cache mounts ----
-RUN --mount=type=cache,target=/home/${USER}/.cargo/registry \
-    --mount=type=cache,target=/home/${USER}/.cargo/git \
+RUN --mount=type=cache,target=/home/${USER}/.cargo/registry,uid=${UID},gid=${UID} \
+    --mount=type=cache,target=/home/${USER}/.cargo/git,uid=${UID},gid=${UID} \
     cargo install bender --version ${BENDER_VERSION}
 
 CMD ["/bin/bash"]
