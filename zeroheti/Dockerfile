@@ -33,6 +33,11 @@ RUN mkdir -p "${RISCV_PREFIX}" \
     && tar -xzf /tmp/riscv32-elf-toolchain.tgz -C "${RISCV_PREFIX}" --strip-components=1 \
     && rm -f /tmp/riscv32-elf-toolchain.tgz
 
+# Provide common alias names expected by some projects/docs
+RUN if [ -x "${RISCV_PREFIX}/bin/riscv32-unknown-elf-gcc" ] && [ ! -e "${RISCV_PREFIX}/bin/riscv32-elf-gcc" ]; then \
+        ln -s riscv32-unknown-elf-gcc "${RISCV_PREFIX}/bin/riscv32-elf-gcc"; \
+    fi
+
 ENV PATH="${RISCV_PREFIX}/bin:${PATH}"
 
 # ---- Non-root user ----
