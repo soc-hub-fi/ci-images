@@ -4,19 +4,35 @@ FROM ubuntu:24.04
 
 # Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
-ENV RUST_VERSION=1.94.0
+ARG VERILATOR_VERSION=5.020-1
+ARG RUST_VERSION=1.94.0
+ARG BENDER_VERSION=0.29.1
+ARG RISCV32_ELF_TOOLCHAIN_URL=https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2023.07.05/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.07.05-nightly.tar.gz
+ARG RISCV_PREFIX=/opt/riscv
+
 ENV USER=builder
 ENV UID=1000
 
 # ---- System deps ----
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     git \
+    python3 \
+    tar \
     build-essential \
     pkg-config \
     libssl-dev \
+    verilator=${VERILATOR_VERSION} \
     && rm -rf /var/lib/apt/lists/*
+
+# ---- riscv32-elf toolchain ----
+RUN mkdir -p "${RISCV_PREFIX}" \
+    && curl -fsSL "${RISCV32_ELF_TOOLCHAIN_URL}" -o /tmp/riscv32-elf-toolchain.tgz \
+    && tar -xzf /tmp/riscv32-elf-toolchain.tgz -C "${RISCV_PREFIX}" --strip-components=1 \
+    && rm -f /tmp/riscv32-elf-toolchain.tgz
+
+ENV PATH="${RISCV_PREFIX}/bin:${PATH}"
 
 # ---- Non-root user ----
 RUN useradd -m -u ${UID} -s /bin/bash ${USER}
@@ -37,6 +53,6 @@ ENV RUSTUP_HOME=/home/${USER}/.rustup
 # ---- Install Bender with cache mounts ----
 RUN --mount=type=cache,target=/home/${USER}/.cargo/registry \
     --mount=type=cache,target=/home/${USER}/.cargo/git \
-    cargo install bender
+    cargo install bender --version ${BENDER_VERSION}
 
 CMD ["/bin/bash"]
