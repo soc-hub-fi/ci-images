@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     zlib1g-dev \
     libssl-dev \
+    xxd \
     verilator=${VERILATOR_VERSION} \
     && rm -rf /var/lib/apt/lists/*
 
