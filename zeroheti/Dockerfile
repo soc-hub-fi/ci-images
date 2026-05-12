@@ -4,7 +4,7 @@ FROM ubuntu:24.04
 
 # Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
-ARG VERILATOR_VERSION=5.020-1
+ARG VERILATOR_VERSION=v5.042
 ARG RUST_VERSION=1.94.0
 ARG BENDER_VERSION=0.29.1
 ARG RISCV32_ELF_TOOLCHAIN_URL=https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2023.07.05/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.07.05-nightly.tar.gz
@@ -22,13 +22,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tar \
     build-essential \
     pkg-config \
+    perl \
+    help2man \
     # Needed for Verilator FST tracing: zlib.h
     zlib1g-dev \
     libssl-dev \
     # Needed by run-sim.sh to conver ELF to binary
     xxd \
-    verilator=${VERILATOR_VERSION} \
+    # Needed for local CI runs (with act)
+    nodejs \
+    # Needed by Verilator
+    ccache \
+    autoconf \
+    flex \
+    bison \
+    libfl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# ---- Build Verilator from source ----
+RUN git clone https://github.com/verilator/verilator.git /patch/verilator \
+    && cd /patch/verilator \
+    && git checkout ${VERILATOR_VERSION} \
+    && autoconf \
+    && ./configure \
+    && make -j$(nproc) \
+    && make install \
+    && rm -rf /patch/verilator
 
 # ---- riscv32-elf toolchain ----
 RUN mkdir -p "${RISCV_PREFIX}" \
