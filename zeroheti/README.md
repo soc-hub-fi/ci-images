@@ -2,7 +2,7 @@
 
 ## Features
 
-* verilator=5.020
+* verilator=5.042
 * Rust=1.94.0
 * Bender=0.29.1
 * 32-bit RISC-V toolchain (Ubuntu 22.04)=2023.07.05-nightly
