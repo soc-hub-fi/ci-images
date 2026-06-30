@@ -4,7 +4,7 @@ FROM ubuntu:24.04
 
 # Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
-ARG VERILATOR_VERSION=v5.042
+ARG VERILATOR_VERSION=v5.048
 ARG RUST_VERSION=1.94.0
 ARG BENDER_VERSION=0.29.1
 ARG RISCV32_ELF_TOOLCHAIN_URL=https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2023.07.05/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.07.05-nightly.tar.gz
