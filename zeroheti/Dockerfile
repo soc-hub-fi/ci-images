@@ -11,7 +11,7 @@ ARG RISCV32_ELF_TOOLCHAIN_URL=https://github.com/riscv-collab/riscv-gnu-toolchai
 ARG RISCV_PREFIX=/opt/riscv
 
 ENV USER=builder
-ENV UID=1000
+ENV BUILDER_UID=1000
 
 # ---- System deps ----
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -65,13 +65,17 @@ ENV PATH="${RISCV_PREFIX}/bin:${PATH}"
 # ---- Non-root user ----
 # Some base images already have UID 1000 allocated (e.g. "ubuntu").
 # If so, reuse that UID and rename/move it to our desired user/home.
-RUN if getent passwd "${UID}" >/dev/null; then \
-        existing_user="$(getent passwd "${UID}" | cut -d: -f1)"; \
+RUN if getent passwd "${BUILDER_UID}" >/dev/null; then \
+        existing_user="$(getent passwd "${BUILDER_UID}" | cut -d: -f1)"; \
         usermod -l "${USER}" "${existing_user}"; \
         usermod -d "/home/${USER}" -m "${USER}"; \
     else \
-        useradd -m -u "${UID}" -s /bin/bash "${USER}"; \
+        useradd -m -u "${BUILDER_UID}" -s /bin/bash "${USER}"; \
     fi
+
+# ccache needs a writable cache directory; the home dir may not be writable
+# depending on build environment, so point it at /tmp.
+ENV CCACHE_DIR=/tmp/.ccache
 
 USER ${USER}
 WORKDIR /home/${USER}
@@ -87,8 +91,8 @@ ENV CARGO_HOME=/home/${USER}/.cargo
 ENV RUSTUP_HOME=/home/${USER}/.rustup
 
 # ---- Install Bender with cache mounts ----
-RUN --mount=type=cache,target=/home/${USER}/.cargo/registry,uid=${UID},gid=${UID} \
-    --mount=type=cache,target=/home/${USER}/.cargo/git,uid=${UID},gid=${UID} \
+RUN --mount=type=cache,target=/home/${USER}/.cargo/registry,uid=${BUILDER_UID},gid=${BUILDER_UID} \
+    --mount=type=cache,target=/home/${USER}/.cargo/git,uid=${BUILDER_UID},gid=${BUILDER_UID} \
     cargo install bender --version ${BENDER_VERSION}
 
 CMD ["/bin/bash"]
